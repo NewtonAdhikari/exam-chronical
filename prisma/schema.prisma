@@ -1,0 +1,354 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  image     String?
+  role      String   @default("USER")
+  phone     String?
+  bio       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  jobs            Job[]
+  exams           Exam[]
+  posts           Post[]
+  currentAffairs  CurrentAffair[]
+  studyMaterials  StudyMaterial[]
+  mockTests       MockTest[]
+  quizAttempts    QuizAttempt[]
+  bookmarks       Bookmark[]
+  comments        Comment[]
+  notifications   Notification[]
+  downloads       Download[]
+}
+
+model JobCategory {
+  id          String @id @default(cuid())
+  name        String
+  slug        String @unique
+  description String?
+  icon        String?
+
+  jobs Job[]
+}
+
+model Job {
+  id                   String     @id @default(cuid())
+  title                String
+  slug                 String     @unique
+  department           String?
+  vacancies            Int?
+  location             String?
+  qualification        String?
+  ageLimit             String?
+  salary               String?
+  applicationFee       String?
+  selectionProcess     String?
+  importantDates       String?
+  officialNotificationUrl String?
+  officialWebsite      String?
+  applyLink            String?
+  status               String     @default("DRAFT")
+  isFeatured           Boolean    @default(false)
+  isUrgent             Boolean    @default(false)
+  publishedAt          DateTime?
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+
+  categoryId String?
+  category   JobCategory? @relation(fields: [categoryId], references: [id])
+  authorId   String?
+  author     User?        @relation(fields: [authorId], references: [id])
+}
+
+model ExamCategory {
+  id          String @id @default(cuid())
+  name        String
+  slug        String @unique
+  description String?
+  icon        String?
+
+  exams Exam[]
+}
+
+model Exam {
+  id                    String     @id @default(cuid())
+  title                 String
+  slug                  String     @unique
+  description           String?
+  eligibility           String?
+  ageLimit              String?
+  educationalQualification String?
+  selectionProcess      String?
+  examPattern           String?
+  syllabus              String?
+  salary                String?
+  officialWebsite       String?
+  status                String     @default("DRAFT")
+  isFeatured            Boolean    @default(false)
+  publishedAt           DateTime?
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  categoryId String?
+  category   ExamCategory? @relation(fields: [categoryId], references: [id])
+  authorId   String?
+  author     User?         @relation(fields: [authorId], references: [id])
+}
+
+model Post {
+  id            String     @id @default(cuid())
+  title         String
+  slug          String     @unique
+  excerpt       String?
+  content       String?
+  featuredImage String?
+  category      String?
+  status        String     @default("DRAFT")
+  isFeatured    Boolean    @default(false)
+  metaTitle     String?
+  metaDescription String?
+  canonicalUrl  String?
+  publishedAt   DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  authorId String?
+  author   User?     @relation(fields: [authorId], references: [id])
+
+  tags     PostTag[]
+  comments Comment[]
+}
+
+model Tag {
+  id   String   @id @default(cuid())
+  name String   @unique
+  slug String   @unique
+
+  posts PostTag[]
+}
+
+model PostTag {
+  id     String @id @default(cuid())
+  postId String
+  tagId  String
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, tagId])
+}
+
+model CurrentAffair {
+  id        String     @id @default(cuid())
+  title     String
+  slug      String     @unique
+  content   String?
+  date      DateTime
+  type      String     @default("DAILY")
+  category  String?
+  pdfUrl    String?
+  status    String     @default("PUBLISHED")
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  authorId String?
+  author   User?     @relation(fields: [authorId], references: [id])
+}
+
+model StudyMaterial {
+  id            String     @id @default(cuid())
+  title         String
+  slug          String     @unique
+  description   String?
+  type          String     @default("PDF")
+  category      String?
+  examName      String?
+  fileUrl       String?
+  fileSize      String?
+  downloadCount Int        @default(0)
+  status        String     @default("PUBLISHED")
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  authorId String?
+  author   User?     @relation(fields: [authorId], references: [id])
+
+  downloads Download[]
+}
+
+model MockTest {
+  id             String     @id @default(cuid())
+  title          String
+  slug           String     @unique
+  description    String?
+  examCategory   String?
+  totalQuestions Int        @default(0)
+  totalMarks     Int        @default(0)
+  negativeMarking Boolean   @default(true)
+  negativeMarkValue Float   @default(0.25)
+  duration       Int        @default(30)
+  difficulty     String     @default("MEDIUM")
+  status         String     @default("DRAFT")
+  isFree         Boolean    @default(true)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  authorId String?
+  author   User?         @relation(fields: [authorId], references: [id])
+
+  questions     Question[]
+  quizAttempts  QuizAttempt[]
+}
+
+model Question {
+  id            String   @id @default(cuid())
+  mockTestId    String
+  text          String
+  optionA       String
+  optionB       String
+  optionC       String
+  optionD       String
+  correctAnswer String   @default("A")
+  explanation   String?
+  marks         Float    @default(1)
+  negativeMarks Float    @default(0.25)
+  order         Int      @default(0)
+
+  mockTest MockTest @relation(fields: [mockTestId], references: [id], onDelete: Cascade)
+
+  answers Answer[]
+}
+
+model QuizAttempt {
+  id             String   @id @default(cuid())
+  userId         String
+  mockTestId     String
+  score          Float    @default(0)
+  totalMarks     Float    @default(0)
+  correctAnswers Int      @default(0)
+  wrongAnswers   Int      @default(0)
+  unanswered     Int      @default(0)
+  timeTaken      Int      @default(0)
+  completedAt    DateTime?
+  createdAt      DateTime @default(now())
+
+  user      User       @relation(fields: [userId], references: [id])
+  mockTest  MockTest   @relation(fields: [mockTestId], references: [id])
+
+  answers Answer[]
+}
+
+model Answer {
+  id             String @id @default(cuid())
+  quizAttemptId  String
+  questionId     String
+  selectedAnswer String?
+  isCorrect      Boolean @default(false)
+
+  quizAttempt QuizAttempt @relation(fields: [quizAttemptId], references: [id], onDelete: Cascade)
+  question    Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([quizAttemptId, questionId])
+}
+
+model Result {
+  id         String   @id @default(cuid())
+  title      String
+  slug       String   @unique
+  examName   String?
+  resultDate DateTime?
+  resultUrl  String?
+  status     String   @default("PUBLISHED")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model AdmitCard {
+  id           String   @id @default(cuid())
+  title        String
+  slug         String   @unique
+  examName     String?
+  releaseDate  DateTime?
+  downloadUrl  String?
+  status       String   @default("PUBLISHED")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model AnswerKey {
+  id           String   @id @default(cuid())
+  title        String
+  slug         String   @unique
+  examName     String?
+  releaseDate  DateTime?
+  downloadUrl  String?
+  status       String   @default("PUBLISHED")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  itemId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, itemId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  content   String
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String   @default("INFO")
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Newsletter {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model Download {
+  id        String   @id @default(cuid())
+  userId    String?
+  type      String
+  itemId    String?
+  fileUrl   String?
+  createdAt DateTime @default(now())
+
+  user           User?          @relation(fields: [userId], references: [id])
+  studyMaterial  StudyMaterial? @relation(fields: [itemId], references: [id])
+}
